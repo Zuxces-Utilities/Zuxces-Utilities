@@ -5,33 +5,38 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.hooks.SubscribeEvent
+import net.dv8tion.jda.api.interactions.components.Button
+import net.dv8tion.jda.internal.interactions.ButtonImpl
+import net.dv8tion.jda.internal.interactions.SelectionMenuImpl
 import org.feuer.partners.zuxces.core.annotation.MessageCommand
 import java.lang.Exception
 import java.lang.NumberFormatException
 import java.lang.reflect.Method
 import java.util.HashMap
 import java.util.concurrent.Executors
+import javax.naming.InvalidNameException
 
 /**
  * Handles the fucking commands
  */
 class MessageCommandHandler() {
     val commands = HashMap<String, Command>()
+    val interactionClearAfterExecution = HashMap<String, Boolean>()
+    val interactionCallback = HashMap<String, (interaction: InteractionEvent) -> Unit>()
     /**
      * The handling method using jda annotation methods.
      */
     @SubscribeEvent
     fun handle(event: GuildMessageReceivedEvent) {
         val prefix = ">"
-        if (event.message.contentRaw.startsWith("<@!750368143209267281>")) return event.message.reply("My prefix in this guild is set to `${prefix}`").queue()
         if (!event.message.contentRaw.startsWith(prefix)) return
         if (event.author.isBot || event.message.isWebhookMessage) return
+        println(event.message.contentRaw.removePrefix(prefix).split(" ").toTypedArray()[0])
         val splitContent = event.message.contentRaw.removePrefix(prefix).split(" ").toTypedArray()
         if (!commands.containsKey(splitContent[0])) return
         val command = commands[splitContent[0]]
-        val annotation = command!!.commandAnnotation
         async.submit {
-            invokeMethod(command, getParameters(splitContent, command, event.message, event.jda), event)
+            command!!.executor.execute(event.message, event.channel, Utils(event, commands), splitContent)
         }
     }
 
@@ -149,9 +154,11 @@ class MessageCommandHandler() {
      */
     private fun invokeMethod(command: Command?, parameters: Array<Any?>, event: GuildMessageReceivedEvent) {
         val m = command!!.method
+        println("Does this work")
         try {
-            m.invoke(command.executor, *parameters)
+            m.invoke(command.executor, Utils(event, commands), *parameters)
         } catch(e: Exception) {
+            e.printStackTrace()
             event.message.reply("Something broke when attempting to execute that command.. :c").queue()
         }
     }
@@ -173,13 +180,50 @@ class MessageCommandHandler() {
     companion object {
         private val async = Executors.newCachedThreadPool()
     }
+    inner class Utils(private val event: GuildMessageReceivedEvent, private val commands: HashMap<String, MessageCommandHandler.Command>) {
+        fun getCommands(): HashMap<String, MessageCommandHandler.Command> {
+            return commands
+        }
+        fun report() {
+            TODO("The mongo controller has not been built yet..")
+        }
+        inner class Interactions {
+            inner class Button {
+                fun create(message: Message, clearAfterExecution: Boolean = true, vararg buttons: ButtonImpl): ((InteractionEvent) -> Unit) -> Unit {
+                    val msg = event.message.reply(message)
+                    val buttonQueue = mutableListOf<net.dv8tion.jda.api.interactions.components.Button>()
+                    for (button in buttons) {
+                        if (button.id?.startsWith("button:") == true) throw InvalidNameException("Button id can't contain button: at start!")
+                        buttonQueue.add(button as net.dv8tion.jda.api.interactions.components.Button)
+                    }
+                    msg.setActionRow(buttonQueue)
+                    msg.queue()
+                    return fun(listener: (InteractionEvent) -> Unit) {
+                        for (button in buttons) {
+                            interactionClearAfterExecution["button:${button.id}"] = clearAfterExecution
+                            interactionCallback["button:${button.id}"] = listener
+                        }
+                    }
+                }
+                fun remove(vararg buttons: String) {
+                    for (button in buttons) {
+                        interactionCallback.remove("button:${button}")
+                    }
+                }
+            }
+            inner class Menu {
+                fun create(message: Message, clearAfterExecution: Boolean = true, menu: SelectionMenuImpl): ((InteractionEvent) -> Unit) -> Unit {
+                    val msg = event.message.reply(message)
+                    if (menu.id?.startsWith("menu:") == true) throw InvalidNameException("Menu id can't contain menu: at start!")
+                    msg.setActionRow(menu)
+                    msg.queue()
+                    return fun (listener: (InteractionEvent) -> Unit) {
+                        interactionClearAfterExecution["menu:${menu.id}"] = clearAfterExecution
+                        interactionCallback["menu:${menu.id}"] = listener
+                    }
+                }
+            }
+        }
+    }
+}
 
-}
-class Utils(private val event: GuildMessageReceivedEvent, private val commands: HashMap<String, MessageCommandHandler.Command>) {
-    fun getCommands(): HashMap<String, MessageCommandHandler.Command> {
-        return commands
-    }
-    fun report() {
-        TODO("The mongo controller has not been built yet..")
-    }
-}

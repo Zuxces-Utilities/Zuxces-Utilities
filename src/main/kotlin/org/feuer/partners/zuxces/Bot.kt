@@ -11,5 +11,6 @@ fun main() {
  val client = ZuxcesClient()
  client.setup(config["token"])
  client.registerEventListeners()
+ client.registerMessageCommands()
  client.start()
 }
