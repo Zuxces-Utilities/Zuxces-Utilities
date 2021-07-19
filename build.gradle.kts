@@ -20,4 +20,5 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("org.mongodb:mongodb-driver-legacy:4.1.0-beta2")
     implementation("com.google.code.gson:gson:2.8.6")
+    implementation("org.litote.kmongo:kmongo:4.2.3")
 }

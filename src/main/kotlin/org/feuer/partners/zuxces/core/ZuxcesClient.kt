@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.hooks.AnnotatedEventManager
 import net.dv8tion.jda.api.requests.GatewayIntent
 import org.feuer.partners.zuxces.commands.ButtonTestCommand
 import org.feuer.partners.zuxces.commands.MenuTestCommand
+import org.feuer.partners.zuxces.commands.roles.SelfRoleCommand
 import org.feuer.partners.zuxces.core.listeners.ActionRowListener
 import org.feuer.partners.zuxces.core.listeners.InteractionEvent
 import org.feuer.partners.zuxces.core.listeners.MessageCommandHandler
@@ -16,7 +17,7 @@ import org.feuer.partners.zuxces.core.listeners.SuperListener
  */
 class ZuxcesClient() {
     var builder: JDABuilder? = null
-    val messageHandler = MessageCommandHandler()
+    private val messageHandler = MessageCommandHandler()
     /**
      * Set up the JDA instance with the basic intents and its token to be built later on in the stack
      * @param token The Discord Bot token
@@ -41,7 +42,7 @@ class ZuxcesClient() {
          )
     }
     fun registerMessageCommands() {
-        messageHandler.registerCommands(ButtonTestCommand(), MenuTestCommand())
+        messageHandler.registerCommands(ButtonTestCommand(), MenuTestCommand(), SelfRoleCommand())
     }
     fun start(): JDA {
         return builder!!.build()

@@ -6,5 +6,5 @@ import org.feuer.partners.zuxces.core.listeners.MessageCommandHandler
 
 
 interface Command {
-        fun execute(event: Message, channel: MessageChannel, utils: MessageCommandHandler.Utils, args: Array<String>)
+        fun execute(event: Message, channel: MessageChannel, utils: MessageCommandHandler.Utils)
 }

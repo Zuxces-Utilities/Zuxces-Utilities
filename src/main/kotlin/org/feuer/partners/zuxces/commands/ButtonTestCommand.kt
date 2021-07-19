@@ -11,7 +11,7 @@ import org.feuer.partners.zuxces.core.listeners.MessageCommandHandler
 
 class ButtonTestCommand: Command {
     @MessageCommand(["test-button","tb"])
-    override fun execute(event: Message, channel: MessageChannel, utils: MessageCommandHandler.Utils, args: Array<String>) {
+    override fun execute(event: Message, channel: MessageChannel, utils: MessageCommandHandler.Utils) {
         val messageBuilder = MessageBuilder()
         utils.Interactions().Button().create(messageBuilder.setContent("Are you sure you want to ban this user?").build(), true, Button.danger("true", "Yes") as ButtonImpl, Button.success("false", "No") as ButtonImpl).invoke{ev ->
             when (ev.buttonInteraction!!.button?.id) {
